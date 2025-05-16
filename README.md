@@ -15,7 +15,7 @@ The goal of this demo is to showcase:
 
 ## Context
 
-The simulated system is a multi-tenant e-commerce application operating across several countries. Each tenant (e.g., `cambodia`, `slumberland`, etc.) has its own API entrypoint, headers, and context-specific behavior.
+The simulated system is a multi-tenant e-commerce application operating across several countries. Each tenant (e.g., `myanmar`, `slumberland`, etc.) has its own API entrypoint, headers, and context-specific behavior.
 
 The test suite demonstrates how to:
 - Authenticate per-tenant
@@ -26,23 +26,17 @@ The test suite demonstrates how to:
 
 ## Contents
 
+```
 locust_graphql_demo/
-
-├── locustfile.py # Main test definitions and task flow
-
-├── users.json # Example user login data
-
+├── locustfile.py               # Main test definitions and task flow
+├── users.json                  # Example user login data
 ├── utils/
-
-│ ├── config.py # Per-tenant config mapping
-
-│ └── graphql_loader.py # Utility for loading GraphQL queries from files
-
-├── scenarios/ # Placeholder for future custom task flows
-
-├── README.md # You're here
-
+│   ├── config.py               # Per-tenant config mapping
+│   └── graphql_loader.py       # Utility for loading GraphQL queries from files
+├── scenarios/                  # Placeholder for future custom task flows
+├── README.md                   # You're here
 └── .gitignore
+```
 
 ---
 
@@ -61,14 +55,17 @@ locust_graphql_demo/
 1. Clone the repository:
    ```bash
    git clone https://github.com/karl5252/locust_graphql_demo.git
-   cd locust_graphql_demo
+   cd locust_graphql_demo   
+   ```
 2. Install dependencies (requires Python 3.8+):
    ```bash
    pip install -r requirements.txt
    Start the Locust web interface:
+   ```
 3. locust -f locustfile.py
    ```bash
    Open http://localhost:8089 in your browser and launch the test.
+   ```
    
 ## Sample Tasks
 * spam_product_list: Single query, repeated request for product data
@@ -93,10 +90,12 @@ This would allow:
 - removal of copy-paste variations of `locustfile.py`.
 
 Suggested structure:
+```
 /tenants/
-├── cambodia.py
-├── slumberland.py
+├── myanmar.py
+├── southafrica.py
 └── base_strategy.py
+```
 
 
 Each strategy can be injected dynamically via CLI (`--host`, `--tenant`) or environment variables.
