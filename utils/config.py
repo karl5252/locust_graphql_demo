@@ -2,9 +2,27 @@ TENANT_CONFIGS = {
     "slumberland": {
         "tenant": "slumberland",
         "origin": "<APP_ORIGIN>",
-        "referer": "<APP_REFERER>"
+        "referer": "<APP_REFERER>",
+        "headers": {
+            "X-Tenant-ID": "slumberland"
+        }
     },
-    # Add other tenants here...
+    "wonderland": {
+        "tenant": "wonderland",
+        "origin": "<APP_ORIGIN>",
+        "referer": "<APP_REFERER>",
+        "headers": {
+            "X-Tenant-ID": "wonderland"
+        }
+    },
+    "neverwinter": {
+        "tenant": "neverwinter",
+        "origin": "<APP_ORIGIN>",
+        "referer": "<APP_REFERER>",
+        "headers": {
+            "X-Tenant-ID": "neverwinter"
+        }
+    },
 }
 
 
