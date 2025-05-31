@@ -1,7 +1,7 @@
 import json
 import random
 
-from locust import HttpUser, between
+from locust import HttpUser, between, task
 
 from utils.config import get_tenant_config
 from utils.graphql_loader import load_query
@@ -10,6 +10,7 @@ from utils.graphql_loader import load_query
 class MultiTenantUser(HttpUser):
     host = "https://<YOUR_API_GATEWAY_URL>"
     wait_time = between(1, 5)
+    abstract = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -205,9 +206,6 @@ class MultiTenantUser(HttpUser):
                     offerCode
                     shortDescription
                     fullDescription
-                    orderStreakProgress
-                    orderStreakCycle
-                    isCyclicOffer
                     offerEndDate
                     __typename
                   }
@@ -216,3 +214,8 @@ class MultiTenantUser(HttpUser):
         }
         with self.client.post("/", json=query, name="GraphQL: OrderStreakOffers", catch_response=True) as resp:
             self.validate_graphql_response(resp, label="OrderStreakOffers")
+
+    @task(0)
+    def _noop(self):
+        """ No operation task to keep the user active without performing any actions."""
+        pass
