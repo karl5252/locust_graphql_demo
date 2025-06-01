@@ -1,5 +1,6 @@
 import json
 import random
+from abc import abstractmethod, ABC
 
 from locust import HttpUser, between, task
 
@@ -7,7 +8,7 @@ from utils.config import get_tenant_config
 from utils.graphql_loader import load_query
 
 
-class MultiTenantUser(HttpUser):
+class MultiTenantUser(HttpUser, ABC):
     host = "https://<YOUR_API_GATEWAY_URL>"
     wait_time = between(1, 5)
     abstract = True
@@ -15,9 +16,16 @@ class MultiTenantUser(HttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tenant_id = 'slumberland'  # Default tenant
+        self.outlet_id = self.get_tenant_id()
         self.config = get_tenant_config(self.tenant_id)
         self.client.headers.update(self.config["headers"])
-        self.outlet_ids = None
+
+        self.token = None
+
+    @abstractmethod
+    def get_tenant_id(self):
+        """Abstract method to get tenant ID. Must be implemented by subclasses."""
+        pass
 
     def on_start(self):
         with open("users.json", "r") as f:
@@ -219,3 +227,5 @@ class MultiTenantUser(HttpUser):
     def _noop(self):
         """ No operation task to keep the user active without performing any actions."""
         pass
+
+
