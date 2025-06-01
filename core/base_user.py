@@ -17,8 +17,7 @@ class MultiTenantUser(HttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.outlet_ids = None
-        self.tenant_id = 'slumberland'  # Default tenant
-        self.outlet_id = self.get_tenant_id()
+        self.tenant_id = self.get_tenant_id()  # default tenant ID, to be overridden by subclasses
         self.config = get_tenant_config(self.tenant_id)
         self.client.headers.update(self.config["headers"])
 
@@ -109,9 +108,9 @@ class MultiTenantUser(HttpUser):
             "variables": {"outletId": outlet_id},
             "query": load_query("load_profile_rewards.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: LoadProfilePointAndReward",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: LoadProfilePointAndReward",
                               catch_response=True) as resp:
-            self.validate_graphql_response(resp, "LoadProfilePointAndReward")
+            return self.validate_graphql_response(resp, "LoadProfilePointAndReward")
 
     def get_product_list(self, bp_key=None, bp_id=None):
         """Get product list for a specific business partner"""
@@ -136,8 +135,8 @@ class MultiTenantUser(HttpUser):
             },
             "query": load_query("search_result_item.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: SearchResultItem", catch_response=True) as resp:
-            self.validate_graphql_response(resp, "SearchResultItem")
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: SearchResultItem", catch_response=True) as resp:
+            return self.validate_graphql_response(resp, "SearchResultItem")
 
     def get_user_info_and_extract_outlets(self):
         """Get user info and extract outlet IDs"""
@@ -146,7 +145,7 @@ class MultiTenantUser(HttpUser):
             "variables": {},
             "query": load_query("get_user_info.graphql")  # Use external file
         }
-        with self.client.post("/", json=query, name="GraphQL: GetUser",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: GetUser",
                               catch_response=True) as resp:
             if self.validate_graphql_response(resp, "GetUser"):
                 try:
@@ -173,7 +172,7 @@ class MultiTenantUser(HttpUser):
             "variables": {"globalBusinessPartnerId": outlet_id},
             "query": load_query("change_outlet.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: ChangeOutlet",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: ChangeOutlet",
                               catch_response=True) as resp:
             return self.validate_graphql_response(resp, "ChangeOutlet")
 
@@ -184,7 +183,7 @@ class MultiTenantUser(HttpUser):
             "variables": {},
             "query": load_query("get_user.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: GetUser",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: GetUser",
                               catch_response=True) as resp:
             return self.validate_graphql_response(resp, "GetUser")
 
@@ -195,7 +194,7 @@ class MultiTenantUser(HttpUser):
             "variables": {},
             "query": load_query("cart.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: Cart",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: Cart",
                               catch_response=True) as resp:
             return self.validate_graphql_response(resp, "Cart")
 
@@ -206,7 +205,7 @@ class MultiTenantUser(HttpUser):
             "variables": {},
             "query": load_query("notifications.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: Notifications",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: Notifications",
                               catch_response=True) as resp:
             return self.validate_graphql_response(resp, "Notifications")
 
@@ -217,7 +216,7 @@ class MultiTenantUser(HttpUser):
             "variables": {},
             "query": load_query("order_streak_offers.graphql")
         }
-        with self.client.post("/", json=query, name="GraphQL: OrderStreakOffers",
+        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: OrderStreakOffers",
                               catch_response=True) as resp:
             return self.validate_graphql_response(resp, "OrderStreakOffers")
 
@@ -233,7 +232,7 @@ class MultiTenantUser(HttpUser):
         try:
             if resp.status_code != 200:
                 resp.failure(f"{label} HTTP status: {resp.status_code}")
-                return
+                return False
 
             data = resp.json()
 
