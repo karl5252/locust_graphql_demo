@@ -28,11 +28,16 @@ class MultiTenantUser(HttpUser, ABC):
         pass
 
     def on_start(self):
+        """Called when a simulated user starts executing."""
+        self.load_and_login()
+        self.get_user_info_and_extract_outlets()
+
+    def load_and_login(self):
+        """Load user credentials from a JSON file and perform login."""
         with open("users.json", "r") as f:
             users = json.load(f)
             user = random.choice(users)
             self.login(user["username"], user["password"])
-            self.get_user_info_and_extract_outlets()
 
     def login(self, username, password, tenant="slumberland"):
         config = get_tenant_config(tenant)
