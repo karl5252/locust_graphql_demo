@@ -226,6 +226,33 @@ def graphql_handler():
     return jsonify(response_data)
 
 
+@app.route("/health", methods=["POST"])
+def health_check():
+    """Health check endpoint to verify service status."""
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()}), 200
+
+
+@app.route("/tenant-stats", methods=["POST"])
+def tenant_stats():
+    """Endpoint to retrieve tenant statistics."""
+    tenant = request.headers.get("X-Tenant-ID", "unknown")
+    config = TENANT_CONFIGS.get(tenant, TENANT_CONFIGS["default"])
+
+    stats = {
+        "tenant": tenant,
+        "error_rate": config["error_rate"],
+        "latency_range": config["latency_range"],
+        "response_size": config["response_size"]
+    }
+
+    return jsonify(stats), 200
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # Use PORT environment variable or default to 5000
+    print(f"Starting mock backend on port {port}...")
+    print("Available tenants:", ", ".join(TENANT_CONFIGS.keys()))
+    print("health check endpoint: /health")
+    print("tenant stats endpoint: /tenant-stats")
+
     app.run(host='0.0.0.0', port=port, debug=True)
