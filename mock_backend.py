@@ -11,7 +11,7 @@ TENANT_CONFIGS = {
         "error_rate": 0.3,  # 30% error rate
         "latency_range": (0.4, 1.2),  # Latency between 0.4 and 1.2 seconds
         "error_message": "Gamma crash",
-        "response_size": "large" # maybe in the future change to kb?
+        "response_size": "large"  # maybe in the future change to kb?
     },
     "wonderland": {
         "error_rate": 0.05,  # 5% error rate
@@ -33,6 +33,22 @@ TENANT_CONFIGS = {
     }
 }
 
+
+def get_response_size_data(size_type):
+    """    Generate response size data based on the specified size type.
+    Args:
+        size_type (str): The type of response size ('small', 'medium', 'large').
+        Returns:            dict: A dictionary containing the response size data."""
+    if size_type == "small":
+        return {"padding": "x" * 100}
+    elif size_type == "medium":
+        return {"padding": "x" * 1000, "extra_data": list(range(100))}
+    elif size_type == "large":
+        return {"padding": "x" * 10000, "extra_data": list(range(1000))}
+    else:
+        return {"response_size": "unknown", "data": {}}
+
+
 @app.route("/", methods=["POST"])
 def graphql_handler():
     """Handle GraphQL requests with different response times and error rates based on tenant ID."""
@@ -44,19 +60,43 @@ def graphql_handler():
     except Exception as e:
         print(f"Error parsing JSON request: {e}")
         pass
+    config = TENANT_CONFIGS.get(tenant, TENANT_CONFIGS["default"])
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")[:-3]  # Format timestamp to seconds
     print(f"[{timestamp}] Received request for operation: {operation_name} from tenant: {tenant}")
 
-    if tenant == "neverwinter":
-        if random.random() < 0.3:
-            return "Gamma crash", 500
-        time.sleep(random.uniform(0.4, 1.2))
-    elif tenant == "wonderland":
-        time.sleep(random.uniform(0.2, 0.4))
-    else:
-        time.sleep(random.uniform(0.05, 0.1))
-    return jsonify({"data": {"status": "ok", "tenant": tenant}})
+    # Simulate error rate
+    if random.random() < config["error_rate"]:
+        print(f"[{timestamp}] Simulated error for operation: {operation_name} from tenant: {tenant}")
+        error_code = random.choice([500, 502, 503, 504])
+        return jsonify({
+            "errors": [{
+                "message": config["error_message"],
+                "code": error_code,
+                "tenant": tenant
+            }]
+        }), error_code
+
+    # Simulate latency
+    latency = random.uniform(*config["latency_range"])
+    time.sleep(latency)
+
+    # generate response data
+    response_data = {
+        "data": {
+            "operationName": operation_name,
+            "tenant": tenant,
+            "timestamp": timestamp,
+            "latency": latency
+        }
+    }
+
+    # Simulate response size
+    size_data = get_response_size_data(config["response_size"])
+    response_data.update(size_data)
+
+    print(f"[{timestamp}] {tenant}: OK ({latency:.3f}s)")
+    return jsonify(response_data)
 
 
 if __name__ == '__main__':
