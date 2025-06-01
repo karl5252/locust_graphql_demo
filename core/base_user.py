@@ -1,6 +1,6 @@
 import json
 import random
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 
 from locust import HttpUser, between, task
 
@@ -8,7 +8,7 @@ from utils.config import get_tenant_config
 from utils.graphql_loader import load_query
 
 
-class MultiTenantUser(HttpUser, ABC):
+class MultiTenantUser(HttpUser):
     host = "https://<YOUR_API_GATEWAY_URL>"
     wait_time = between(1, 5)
     abstract = True
@@ -34,8 +34,15 @@ class MultiTenantUser(HttpUser, ABC):
 
     def load_and_login(self):
         """Load user credentials from a JSON file and perform login."""
+        if isinstance(self.config, dict):
+            user_pool_file = self.config.get('user_pool')
+            if not user_pool_file:
+                user_pool_file = f"{self.tenant_id}_users.json"
+        else:
+            raise TypeError("self.config is not a dictionary")
+
         user_pools = [
-            f"data/{self.config.get('user_pool', f'{self.tenant_id}_users.json')}",
+            f"data/{user_pool_file}",
             "data/users.json"  # Fallback
         ]
 
@@ -72,14 +79,21 @@ class MultiTenantUser(HttpUser, ABC):
                 data = response.json()
                 try:
                     self.token = data["data"]["login"]["response"]["accessToken"]
-                    self.client.headers.update({
+                    # Update headers with tenant identification and auth
+                    auth_headers = {
                         "Authorization": f"Bearer {self.token}",
                         "YourApp-Token": self.token,
-                        "YourApp-Tenant": config.tenant,
-                        "Content-Type": "application/json",
-                        "Origin": config.origin,
-                        "Referer": config.referer
-                    })
+                        "YourApp-Tenant": self.tenant_id,  # Key tenant identifier
+                        "Content-Type": "application/json"
+                    }
+
+                    # Add optional tenant-specific headers
+                    if "origin" in self.config:
+                        auth_headers["Origin"] = self.config["origin"]
+                    if "referer" in self.config:
+                        auth_headers["Referer"] = self.config["referer"]
+
+                    self.client.headers.update(auth_headers)
                     print("Login successful. Token:", self.token)
                 except Exception as e:
                     response.failure(f"Could not extract token: {e}")
