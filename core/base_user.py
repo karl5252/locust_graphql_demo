@@ -111,7 +111,13 @@ class MultiTenantUser(HttpUser):
         with self.client.post("/", json=query, name="GraphQL: LoadProfilePointAndReward", catch_response=True) as resp:
             self.validate_graphql_response(resp, "LoadProfilePointAndReward")
 
-    def get_product_list(self, bp_key="1111111", bp_id="2222222"):
+    def get_product_list(self, bp_key=None,  bp_id=None):
+        if not isinstance(self.config, dict):
+            raise TypeError("self.config must be a dictionary")
+
+        bp_key = bp_key or self.config.get("default_bp_key", "1111111")
+        bp_id = bp_id or self.config.get("default_bp_id", "2222222")
+
         query = {
             "operationName": "SearchResultItem",
             "variables": {
