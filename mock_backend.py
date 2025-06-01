@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from datetime import datetime
 
 from flask import Flask, send_from_directory, request, jsonify
 
@@ -11,7 +12,19 @@ app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
 def graphql_handler():
+    """Handle GraphQL requests with different response times and error rates based on tenant ID."""
     tenant = request.headers.get("X-Tenant-ID", "unknown")
+    operation_name = None
+    try:
+        request_data = request.get_json() or {}
+        operation_name = request_data.get("operationName", "Unknown")
+    except Exception as e:
+        print(f"Error parsing JSON request: {e}")
+        pass
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")[:-3]  # Format timestamp to seconds
+    print(f"[{timestamp}] Received request for operation: {operation_name} from tenant: {tenant}")
+
     if tenant == "neverwinter":
         if random.random() < 0.3:
             return "Gamma crash", 500
