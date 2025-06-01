@@ -148,13 +148,16 @@ class MultiTenantUser(HttpUser):
                 error_list = [e.get("message", "unknown error") for e in data["errors"]]
                 resp.failure(f"{label} GraphQL error(s): {error_list}")
                 print(f"[GraphQL ERROR] {label}: {error_list}")
+                return False
             else:
                 size = len(resp.text)
                 resp.success()
                 print(f"[{label}] OK: {size / 1024:.1f} KB, status 200")
+                return True
         except Exception as e:
             resp.failure(f"{label} JSON parse error: {e}")
             print(f"[PARSE ERROR] {label}: {e}")
+            return False
 
     def get_user_info_and_extract_outlets(self):
         query = {
