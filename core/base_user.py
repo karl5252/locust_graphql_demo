@@ -101,18 +101,16 @@ class MultiTenantUser(HttpUser):
             else:
                 print("Login failed")
 
-    def get_profile_rewards(self, outlet_id=""):
+    def get_profile_rewards(self, outlet_id="", flow=""):
         """Get profile rewards for user"""
         query = {
             "operationName": "LoadProfilePointAndReward",
             "variables": {"outletId": outlet_id},
             "query": load_query("load_profile_rewards.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: LoadProfilePointAndReward",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "LoadProfilePointAndReward")
+        return self.graphql_post("LoadProfilePointAndReward", query, flow)
 
-    def get_product_list(self, bp_key=None, bp_id=None):
+    def get_product_list(self, bp_key=None, bp_id=None, flow=""):
         """Get product list for a specific business partner"""
         if not isinstance(self.config, dict):
             raise TypeError("self.config must be a dictionary")
@@ -135,8 +133,7 @@ class MultiTenantUser(HttpUser):
             },
             "query": load_query("search_result_item.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: SearchResultItem", catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "SearchResultItem")
+        return self.graphql_post("SearchResultItem", query, flow)
 
     def get_user_info_and_extract_outlets(self):
         """Get user info and extract outlet IDs"""
@@ -160,7 +157,7 @@ class MultiTenantUser(HttpUser):
                 except Exception as e:
                     print(f"[{self.tenant_id}] Failed to parse outlet IDs: {e}")
 
-    def change_outlet(self):
+    def change_outlet(self, flow=""):
         """Change to random outlet"""
         if not self.outlet_ids:
             print(f"[{self.tenant_id}] No outlet IDs available")
@@ -172,53 +169,43 @@ class MultiTenantUser(HttpUser):
             "variables": {"globalBusinessPartnerId": outlet_id},
             "query": load_query("change_outlet.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: ChangeOutlet",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "ChangeOutlet")
+        return self.graphql_post("ChangeOutlet", query, flow)
 
-    def get_user_info(self):
+    def get_user_info(self,flow=""):
         """Get current user info"""
         query = {
             "operationName": "GetUser",
             "variables": {},
             "query": load_query("get_user.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: GetUser",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "GetUser")
+        return self.graphql_post("GetUser", query, flow)
 
-    def get_cart(self):
+    def get_cart(self, flow=""):
         """Get user's cart"""
         query = {
             "operationName": "Cart",
             "variables": {},
             "query": load_query("cart.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: Cart",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "Cart")
+        return self.graphql_post("Cart", query, flow)
 
-    def get_notifications(self):
+    def get_notifications(self, flow=""):
         """Get user notifications"""
         query = {
             "operationName": "Notifications",
             "variables": {},
             "query": load_query("notifications.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: Notifications",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "Notifications")
+        return self.graphql_post("Notifications", query, flow)
 
-    def get_order_streak_offers(self):
+    def get_order_streak_offers(self, flow=""):
         """Get order streak offers"""
         query = {
             "operationName": "OrderStreakOffers",
             "variables": {},
             "query": load_query("order_streak_offers.graphql")
         }
-        with self.client.post("/", json=query, name=f"{self.tenant_id} | GraphQL: OrderStreakOffers",
-                              catch_response=True) as resp:
-            return self.validate_graphql_response(resp, "OrderStreakOffers")
+        return self.graphql_post("OrderStreakOffers", query, flow)
 
     def measure_task_duration(self, task_name, func, *args, **kwargs):
         """Helper method to measure and log task duration"""
@@ -250,3 +237,8 @@ class MultiTenantUser(HttpUser):
             resp.failure(f"{label} JSON parse error: {e}")
             print(f"[PARSE ERROR] {label}: {e}")
             return False
+
+    def graphql_post(self, query_name: str, payload: dict, flow: str = "") -> bool:
+        full_label = f"{self.tenant_id} | {flow} | GraphQL: {query_name}"
+        with self.client.post("/", json=payload, name=full_label, catch_response=True) as resp:
+            return self.validate_graphql_response(resp, query_name)
