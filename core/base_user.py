@@ -34,10 +34,23 @@ class MultiTenantUser(HttpUser, ABC):
 
     def load_and_login(self):
         """Load user credentials from a JSON file and perform login."""
-        with open("users.json", "r") as f:
-            users = json.load(f)
-            user = random.choice(users)
-            self.login(user["username"], user["password"])
+        user_pools = [
+            f"data/{self.config.get('user_pool', f'{self.tenant_id}_users.json')}",
+            "data/users.json"  # Fallback
+        ]
+
+        for users_file in user_pools:
+            try:
+                with open(users_file, "r") as f:
+                    users = json.load(f)
+                    user = random.choice(users)
+                    self.login(user["username"], user["password"])
+                    print(f"[{self.tenant_id}] Loaded user from {users_file}")
+                    return
+            except FileNotFoundError:
+                continue
+
+        raise FileNotFoundError(f"No user pool found for tenant {self.tenant_id}")
 
     def login(self, username, password, tenant="slumberland"):
         config = get_tenant_config(tenant)
